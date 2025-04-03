@@ -1,7 +1,7 @@
 <template>
   <aside class="sidebar">
     <ul>
-      <li>🏠 Trang chủ</li>
+      <li @click="goToHome">🏠 Trang chủ</li>
       <li>👨‍👩‍👧 Bạn bè</li>
       <li>📷 Ảnh</li>
       <li>📺 Video</li>
@@ -15,17 +15,27 @@
 </template>
 
 <script setup>
+import API from '@/api/api';
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter(); 
 const showSettings = ref(false);
-
 const toggleSettings = () => {
   showSettings.value = !showSettings.value;
 };
 
-const logout = () => {
-  alert('Bạn đã đăng xuất!');
-  // Thêm logic đăng xuất tại đây
+const goToHome = () => {
+  router.push('/home');
+};
+
+const logout = async () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userId');
+  const res = await API.post('/access/sign-out')
+  if (res.data.status == 200) { 
+      router.push("/home");
+  }
 };
 </script>
 

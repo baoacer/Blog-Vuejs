@@ -1,13 +1,14 @@
 <script setup>
 import CreatePost from './CreatePost.vue'
 import API from '../api/api'
-import { inject, onMounted, onUnmounted, ref, watchEffect } from 'vue'
+import { inject, onMounted, ref, watchEffect } from 'vue'
 import User, { useUser } from '@/model/user'
+
 
 const posts = ref([])
 const loading = ref(true)
 const nextCursor = ref(null)
-const limit = 5
+const limit = 10
 const content = ref('')
 const commentParentId = ref(null)
 const searchResults = inject('searchResults')
@@ -37,7 +38,7 @@ async function createComment(post) {
       author: { fullname: 'Bạn' },
       comment_content: res.data.metadata.comment_content,
     }
-
+    
     post.comments.push(newComment)
     post.post_comments_count += 1 // Tăng số lượng bình luận
 
@@ -52,20 +53,10 @@ async function fetchPosts() {
     const res = await API.get('/post', {
       params: { cursor: nextCursor.value, limit: limit },
     })
-
-    // Kiểm tra nếu có bài viết mới, tránh trùng lặp
-    const newPosts = res.data.metadata.posts.filter((newPost) => {
-      return !posts.value.some((existingPost) => existingPost._id === newPost._id)
-    })
-
-    // Thêm bài viết mới vào danh sách posts
-    posts.value = [
-      ...posts.value,
-      ...newPosts.map((post) => ({
-        ...post,
-        comments: [],
-      })),
-    ]
+    posts.value = res.data.metadata.posts.map((post) => ({
+      ...post,
+      comments: [],
+    }))
 
     for (let post of posts.value) {
       const commentRes = await API.get(`/comment?postId=${post._id}`)
@@ -79,11 +70,6 @@ async function fetchPosts() {
   } finally {
     loading.value = false
   }
-}
-
-async function loadMorePosts() {
-  if (loading.value || !nextCursor.value) return
-  await fetchPosts()
 }
 
 async function likePost(post) {
@@ -149,12 +135,12 @@ async function createCommentInModal() {
       author: { fullname: 'Bạn' },
       comment_content: res.data.metadata.comment_content,
     }
-
+    
     selectedPost.value.comments.push(newComment)
     selectedPost.value.post_comments_count += 1
-
+    
     // Cập nhật lại post gốc trong danh sách posts
-    const originalPost = posts.value.find((p) => p._id === selectedPost.value._id)
+    const originalPost = posts.value.find(p => p._id === selectedPost.value._id)
     if (originalPost) {
       originalPost.comments.push(newComment)
       originalPost.post_comments_count += 1
@@ -166,48 +152,27 @@ async function createCommentInModal() {
   }
 }
 
-function onScroll() {
-  const scrollPosition = window.scrollY + window.innerHeight
-  const bottomPosition = document.documentElement.scrollHeight
-
-  // Kiểm tra vị trí cuộn, nếu đã gần cuối thì tải thêm bài viết
-  if (scrollPosition >= bottomPosition - 200 && !loading.value && nextCursor.value) {
-    loadMorePosts()
-  }
-}
-
 onMounted(() => {
-  const storedUser = localStorage.getItem('user')
+  const storedUser = localStorage.getItem('user');
   if (storedUser) {
     try {
-      const parsedUser = JSON.parse(storedUser)
-      userRef.value = new User(parsedUser)
+      const parsedUser = JSON.parse(storedUser);
+      userRef.value = new User(parsedUser);
     } catch (error) {
-      console.error('Error parsing user data:', error)
+      console.error('Error parsing user data:', error);
     }
   }
   if (!searchResults.value.length) {
     fetchPosts()
   }
-
-  window.addEventListener('scroll', onScroll)
-
+  
   // Thêm sự kiện để đóng modal khi click bên ngoài
   document.addEventListener('mousedown', (e) => {
     const modal = document.querySelector('.modal-container')
-    if (
-      modal &&
-      showModal.value &&
-      !modal.contains(e.target) &&
-      e.target.className === 'modal-overlay'
-    ) {
+    if (modal && showModal.value && !modal.contains(e.target) && e.target.className === 'modal-overlay') {
       closeModal()
     }
   })
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', onScroll)
 })
 
 watchEffect(() => {
@@ -229,7 +194,7 @@ watchEffect(() => {
           <div v-for="(post, index) in searchResults" :key="index" class="post">
             <div class="post-header">
               <span class="avatar">
-                <img :src="post.author?.profile?.avatar" alt="Avatar" />
+                <img :src="post.author?.profile?.avatar" alt="Avatar">
               </span>
               <div class="post-info">
                 <h4>{{ post.author?.fullname || 'Anonymous' }}</h4>
@@ -241,7 +206,10 @@ watchEffect(() => {
             <div class="post-content">
               <p>{{ post.post_content }}</p>
               <div v-if="post.post_cover_image" class="post-image">
-                <img :src="post.post_cover_image" alt="Post image" />
+                <img
+                  :src="post.post_cover_image"
+                  alt="Post image"
+                />
               </div>
             </div>
 
@@ -263,7 +231,7 @@ watchEffect(() => {
             <div class="comments-section preview" v-if="post.comments && post.comments.length > 0">
               <div class="comment-input">
                 <span class="avatar small">
-                  <img :src="post.author?.avatar" alt="" />
+                  <img :src="post.author?.avatar" alt="">
                 </span>
                 <input
                   v-model="content"
@@ -272,7 +240,7 @@ watchEffect(() => {
                   @keydown.enter="createComment(post)"
                 />
               </div>
-
+              
               <!-- Chỉ hiển thị 2 bình luận mới nhất -->
               <div class="comments-list">
                 <div v-for="comment in post.comments.slice(-2)" :key="comment._id" class="comment">
@@ -282,11 +250,7 @@ watchEffect(() => {
                     <p>{{ comment.comment_content }}</p>
                   </div>
                 </div>
-                <div
-                  v-if="post.comments.length > 2"
-                  class="view-more"
-                  @click="openCommentModal(post)"
-                >
+                <div v-if="post.comments.length > 2" class="view-more" @click="openCommentModal(post)">
                   Xem thêm bình luận...
                 </div>
               </div>
@@ -294,7 +258,7 @@ watchEffect(() => {
           </div>
         </div>
         <div v-else>
-          <h3>Không tìm thấy bài viết nào</h3>
+          <h3>Không tìm thấy bài viết nào</h3>  
         </div>
       </div>
 
@@ -304,8 +268,8 @@ watchEffect(() => {
         <div v-for="(post, index) in posts" :key="index" class="post">
           <div class="post-header">
             <span class="avatar">
-              <img :src="post.author?.profile?.avatar" alt="Avatar" />
-            </span>
+                <img :src="post.author?.profile?.avatar" alt="Avatar">
+              </span>
             <div class="post-info">
               <h4>{{ post.author?.fullname || 'Anonymous' }}</h4>
               <span class="post-time">{{ formatTime(post) }}</span>
@@ -316,7 +280,10 @@ watchEffect(() => {
           <div class="post-content">
             <p>{{ post.post_content }}</p>
             <div v-if="post.post_cover_image" class="post-image">
-              <img :src="post.post_cover_image" alt="Post image" />
+              <img
+                :src="post.post_cover_image"
+                alt="Post image"
+              />
             </div>
           </div>
 
@@ -345,7 +312,7 @@ watchEffect(() => {
                 @keydown.enter="createComment(post)"
               />
             </div>
-
+            
             <!-- Chỉ hiển thị 2 bình luận mới nhất -->
             <div class="comments-list">
               <div v-for="comment in post.comments.slice(-2)" :key="comment._id" class="comment">
@@ -355,74 +322,62 @@ watchEffect(() => {
                   <p>{{ comment.comment_content }}</p>
                 </div>
               </div>
-              <div
-                v-if="post.comments.length > 2"
-                class="view-more"
-                @click="openCommentModal(post)"
-              >
+              <div v-if="post.comments.length > 2" class="view-more" @click="openCommentModal(post)">
                 Xem thêm bình luận...
               </div>
             </div>
           </div>
         </div>
       </div>
-      <!-- Nút tải thêm bài viết -->
-      <div v-if="nextCursor" class="load-more">
-        <button @click="loadMorePosts" :disabled="loading">Xem thêm</button>
-      </div>
-
-      <!-- Hiển thị khi đang tải dữ liệu -->
-      <div v-if="loading" class="loading-spinner">Đang tải...</div>
     </div>
-
+    
     <!-- Modal bình luận -->
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
       <div class="modal-container">
         <div class="modal-header">
           <h3>Bài viết của {{ selectedPost?.author?.fullname || 'Anonymous' }}</h3>
         </div>
-
+        
         <div class="modal-content">
           <!-- Thông tin bài viết -->
           <div class="post-header">
             <span class="avatar">
-              <img :src="selectedPost.author?.profile?.avatar" alt="Avatar" />
-            </span>
+                <img :src="selectedPost.author?.profile?.avatar" alt="Avatar">
+              </span>
             <div class="post-info">
               <h4>{{ selectedPost?.author?.fullname || 'Anonymous' }}</h4>
               <span class="post-time">{{ formatTime(selectedPost) }}</span>
             </div>
           </div>
-
+          
           <div class="post-content">
             <p>{{ selectedPost?.post_content }}</p>
             <div v-if="selectedPost?.post_cover_image" class="post-image">
-              <img :src="selectedPost?.post_cover_image" alt="Post image" />
+              <img
+                :src="selectedPost?.post_cover_image"
+                alt="Post image"
+              />
             </div>
           </div>
-
+          
           <div class="post-stats">
             <span>❤️ {{ selectedPost?.post_likes }}</span>
             <span>💬 {{ selectedPost?.post_comments_count }} bình luận</span>
             <span>🔄 {{ Math.floor(Math.random() * 10) }} chia sẻ</span>
           </div>
-
+          
           <div class="post-actions">
-            <button
-              class="reaction-btn"
-              :class="{ liked: selectedPost?.isLiked }"
-              @click="likePost(selectedPost)"
-            >
+            <button class="reaction-btn" :class="{ liked: selectedPost?.isLiked }" @click="likePost(selectedPost)">
               👍 {{ selectedPost?.isLiked ? 'Đã thích' : 'Thích' }}
             </button>
             <button class="reaction-btn">💬 Bình luận</button>
             <button class="reaction-btn">🔄 Chia sẻ</button>
           </div>
-
+          
           <!-- Phần bình luận -->
           <div class="modal-comments">
             <h4>Bình luận</h4>
-
+            
             <!-- Phần hiển thị tất cả bình luận với scroll -->
             <div class="comments-scrollable">
               <div v-if="selectedPost?.comments.length === 0" class="no-comments">
@@ -436,7 +391,7 @@ watchEffect(() => {
                 </div>
               </div>
             </div>
-
+            
             <!-- Phần nhập bình luận -->
             <div class="comment-input modal-comment-input">
               <span class="avatar small">👤</span>
@@ -456,38 +411,6 @@ watchEffect(() => {
 </template>
 
 <style>
-/* Nút "Xem thêm" */
-.load-more {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.load-more button {
-  padding: 10px 20px;
-  background-color: #3498db;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s;
-}
-
-.load-more button:hover {
-  background-color: #2980b9;
-}
-
-.load-more button:disabled {
-  background-color: #bdc3c7;
-  cursor: not-allowed;
-}
-
-/* Spinner loading */
-.loading-spinner {
-  text-align: center;
-  margin-top: 20px;
-}
-
 /* Reset CSS */
 * {
   box-sizing: border-box;
@@ -782,14 +705,8 @@ body {
 }
 
 @keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-header {
@@ -814,7 +731,7 @@ body {
   color: #000000;
   transition: all 0.2s;
   width: 52px;
-  height: 29px;
+  height:29px;
   border-radius: 0%;
   background-color: #cbc3c3;
   display: flex;
@@ -928,12 +845,12 @@ body.modal-open {
   .right-sidebar {
     max-width: 100%;
   }
-
+  
   .modal-container {
     width: 95%;
     max-height: 95vh;
   }
-
+  
   .comments-scrollable {
     max-height: 200px;
   }

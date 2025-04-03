@@ -10,17 +10,17 @@ const router = createRouter({
     { path: '/login', component: LoginVue },
     { path: '/register', component: RegisterView },
     { path: '/home', component: HomeView, meta: { requiresAuth: true } },
-    { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
+    { path: '/profile/:userId', component: ProfileView, meta: { requiresAuth: true } },
   ],
 })
 
-// router.beforeEach((to, from, next) => {
-//   const isAuthenticated = !!localStorage.getItem('token')
-//   if (to.meta.requiresAuth && !isAuthenticated) {
-//     next('/login') 
-//   } else {
-//     next() 
-//   }
-// })
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem('token')
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next('/login') 
+  } else {
+    next() 
+  }
+})
 
 export default router

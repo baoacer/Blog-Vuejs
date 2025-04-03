@@ -19,6 +19,9 @@ async function login() {
     // console.log("User Profile:", userRef.value.email);
     // console.log("User :", userRef.value.role);
     localStorage.setItem("token", loginResponse.data.metadata.accessToken);
+    localStorage.setItem("userId", userID);
+    console.log("token", localStorage.getItem("token"));
+    console.log("userId", localStorage.getItem("userId"));
     if (loginResponse.data.status == 200) { 
       router.push("/home");
     }

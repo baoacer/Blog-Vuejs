@@ -10,8 +10,10 @@ const API = axios.create({
 // Add Token
 API.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
     if (token) {
         config.headers["authorization"] = token
+        config.headers["x-client-id"] = userId
     }
     return config;
 }, (error) => {

@@ -9,7 +9,6 @@ const userRef = useUser()
 const postImage = ref(null)
 const postImageUrl = ref(null)
 
-
 function openModal() {
   showModal.value = true
   nextTick(() => {
@@ -24,13 +23,13 @@ function closeModal() {
   postImageUrl.value = null
 }
 
-async function submitPost(){
+async function submitPost() {
   if (!postContent.value.trim()) return
 
   const data = new FormData()
   data.append('post_author_id', userRef.value.id)
   data.append('post_content', postContent.value)
-  if(postImageUrl.value) data.append('post_cover_image', postImageUrl.value)
+  if (postImageUrl.value) data.append('post_cover_image', postImageUrl.value)
 
   console.log(`User ID: ${userRef.value.id}`)
   console.log(`Post Content: ${postContent.value}`)
@@ -51,20 +50,17 @@ async function submitPost(){
   showModal.value = false
 }
 
-
 onMounted(() => {
-  const storedUser = localStorage.getItem('user');
+  const storedUser = localStorage.getItem('user')
   if (storedUser) {
     try {
-      const parsedUser = JSON.parse(storedUser);
-      userRef.value = new User(parsedUser);
-      console.log(`User created:`, userRef.value);
+      const parsedUser = JSON.parse(storedUser)
+      userRef.value = new User(parsedUser)
     } catch (error) {
-      console.error('Error parsing user data:', error);
+      console.error('Error parsing user data:', error)
     }
   }
 })
-
 </script>
 
 <template>
@@ -72,7 +68,9 @@ onMounted(() => {
     <!-- Simple input that shows initially -->
     <div class="create-post" v-if="!showModal" @click="openModal">
       <div class="post-input">
-        <span class="avatar">👤</span>
+        <span class="avatar">
+          <img :src="userRef.avatar" alt="" />
+        </span>
         <input type="text" placeholder="Bạn đang nghĩ gì?" readonly />
       </div>
       <div class="post-actions">
@@ -92,10 +90,12 @@ onMounted(() => {
 
         <div class="user-profile">
           <div class="avatar-container">
-            <div class="avatar">👤</div>
+            <span class="avatar">
+              <img :src="userRef.avatar" alt="" />
+            </span>
           </div>
           <div class="user-details">
-            <div class="username">Ngọc Hoàng</div>
+            <div class="username">{{ userRef?.fullname || 'Anonymous' }}</div>
             <div class="privacy-setting"></div>
           </div>
         </div>
@@ -118,11 +118,7 @@ onMounted(() => {
         <div class="attachment-section">
           <div class="attachment-label">Thêm vào bài viết của bạn</div>
           <div class="attachment-icons">
-            <input
-              type="text"
-              v-model="postImageUrl"
-              placeholder="Nhập URL ảnh"
-            />
+            <input type="text" v-model="postImageUrl" placeholder="Nhập URL ảnh" />
           </div>
         </div>
 
@@ -137,7 +133,6 @@ onMounted(() => {
 </template>
 
 <style>
-
 .attachment-section {
   margin-top: 20px;
 }
@@ -155,7 +150,7 @@ onMounted(() => {
   gap: 10px;
 }
 
-input[type="text"] {
+input[type='text'] {
   width: 100%;
   padding: 10px;
   font-size: 16px;
@@ -165,13 +160,13 @@ input[type="text"] {
   transition: border-color 0.3s;
 }
 
-input[type="text"]:focus {
+input[type='text']:focus {
   border-color: #007bff;
   outline: none;
   background-color: #fff;
 }
 
-input[type="text"]::placeholder {
+input[type='text']::placeholder {
   color: #aaa;
 }
 
@@ -201,8 +196,6 @@ input[type="text"]::placeholder {
   font-size: 16px;
   cursor: pointer;
 }
-
-  
 
 /* Initial create post component */
 .create-post {

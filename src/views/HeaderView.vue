@@ -1,33 +1,55 @@
 <script setup>
-import { ref, inject } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import API from '../api/api'
+import User, { useUser } from '@/model/user'
 
+const router = useRouter()
 const searchQuery = ref('')
-const searchResults = inject("searchResults")
+const userRef = useUser()
+const userId = localStorage.getItem('userId') // Lấy userId từ localStorage
 
 async function searchPost() {
   if (!searchQuery.value.trim()) return
   try {
     const res = await API.get(`/post/search/${searchQuery.value}`)
-    searchResults.value = res.data.metadata
-    console.log('Kết quả tìm kiếm:', searchResults.value)
+    console.log('Kết quả tìm kiếm:', res.data.metadata)
   } catch (error) {
     console.error('Lỗi khi tìm kiếm bài viết:', error)
   }
 }
+
+const goToProfile = () => {
+  if (userId) {
+    router.push(`/profile/${userId}`)
+  }
+}
+
+onMounted(() => {
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    try {
+      const parsedUser = JSON.parse(storedUser)
+      userRef.value = new User(parsedUser)
+      console.log('User Data:', JSON.stringify(userRef.value, null, 2))
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+    }
+  }
+})
 </script>
 
 <template>
   <header class="header">
     <div class="logo-search">
-      <h2 class="logo">Star Nekwork</h2>
+      <h2 class="logo">Star Network</h2>
       <div class="search-container">
         <input 
-        v-model="searchQuery"
-        type="text" 
-        placeholder="Tìm kiếm..." 
-        class="search-box" 
-        @keydown.enter="searchPost"
+          v-model="searchQuery"
+          type="text" 
+          placeholder="Tìm kiếm..." 
+          class="search-box" 
+          @keydown.enter="searchPost"
         />
         <span class="search-icon">🔍</span>
       </div>
@@ -35,12 +57,32 @@ async function searchPost() {
     <div class="user-actions">
       <span class="action-icon">🔔</span>
       <span class="action-icon">💬</span>
-      <span class="action-icon">👤</span>
+      <span class="avatar action-icon" @click="goToProfile">
+        <img :src="userRef.avatar" alt="">
+      </span>
     </div>
   </header>
 </template>
 
+
 <style scoped>
+/* Avatar */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .header {
   position: fixed;
   top: 0;
